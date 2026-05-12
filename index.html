@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘 할일</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <style>
+    :root {
+      --md-primary:            #6750A4;
+      --md-on-primary:         #FFFFFF;
+      --md-primary-container:  #EADDFF;
+      --md-surface:            #FFFBFE;
+      --md-surface-variant:    #E7E0EC;
+      --md-on-surface:         #1C1B1F;
+      --md-on-surface-variant: #49454F;
+      --md-outline:            #79747E;
+      --md-background:         #F4EFF4;
+      --md-error:              #B3261E;
+      --md-error-container:    #F9DEDC;
+
+      --elev-1: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15);
+      --elev-2: 0 1px 2px rgba(0,0,0,.3), 0 2px 6px 2px rgba(0,0,0,.15);
+      --elev-3: 0 4px 8px 3px rgba(0,0,0,.15), 0 1px 3px rgba(0,0,0,.3);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--md-background);
+      min-height: 100vh;
+      color: var(--md-on-surface);
+    }
+
+    /* ── Auth View ── */
+    #auth-view {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .auth-card {
+      background: var(--md-surface);
+      border-radius: 28px;
+      box-shadow: var(--elev-3);
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .auth-logo .material-icons-round {
+      font-size: 2rem;
+      color: var(--md-primary);
+    }
+
+    .auth-logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--md-primary);
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--md-surface-variant);
+      margin-bottom: 24px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--md-on-surface-variant);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .auth-tab.active {
+      color: var(--md-primary);
+      border-bottom-color: var(--md-primary);
+    }
+
+    #auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Filled Text Field (auth) */
+    .field-wrap {
+      position: relative;
+    }
+
+    .field-wrap input {
+      width: 100%;
+      height: 56px;
+      padding: 20px 14px 8px;
+      border: none;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 2px solid var(--md-outline);
+      font-family: 'Roboto', sans-serif;
+      font-size: 1rem;
+      color: var(--md-on-surface);
+      background: var(--md-surface-variant);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .field-wrap input:hover { background: #DDD8E8; }
+
+    .field-wrap input:focus { border-bottom-color: var(--md-primary); }
+
+    .field-wrap label {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      color: var(--md-on-surface-variant);
+      pointer-events: none;
+      transition: all 0.15s ease;
+    }
+
+    .field-wrap input:focus ~ label,
+    .field-wrap input:not(:placeholder-shown) ~ label {
+      top: 10px;
+      transform: none;
+      font-size: 0.75rem;
+      color: var(--md-primary);
+    }
+
+    .auth-message {
+      font-size: 0.85rem;
+      min-height: 20px;
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+
+    .auth-message.error { color: var(--md-error); }
+    .auth-message.info  { color: #1A6B3C; }
+
+    /* ── App View ── */
+    .app-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      height: 64px;
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+      box-shadow: var(--elev-2);
+    }
+
+    .app-bar h1 {
+      font-size: 1.375rem;
+      font-weight: 500;
+    }
+
+    .app-bar .spacer { flex: 1; }
+
+    .user-email {
+      font-size: 0.8rem;
+      opacity: 0.85;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--md-on-primary);
+      cursor: pointer;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover { background: rgba(255,255,255,0.15); }
+
+    /* ── Layout ── */
+    .main-content {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px 80px;
+    }
+
+    /* ── Input Card ── */
+    .input-card {
+      background: var(--md-surface);
+      border-radius: 16px;
+      box-shadow: var(--elev-1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+
+    /* Filled Text Field (todo input) */
+    .text-field {
+      flex: 1 1 200px;
+      position: relative;
+    }
+
+    .text-field input {
+      width: 100%;
+      height: 56px;
+      padding: 20px 14px 8px;
+      border: none;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 2px solid var(--md-outline);
+      font-family: 'Roboto', sans-serif;
+      font-size: 1rem;
+      color: var(--md-on-surface);
+      background: var(--md-surface-variant);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .text-field input:hover { background: #DDD8E8; }
+    .text-field input:focus { border-bottom-color: var(--md-primary); }
+
+    .text-field label {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      color: var(--md-on-surface-variant);
+      pointer-events: none;
+      transition: all 0.15s ease;
+    }
+
+    .text-field input:focus ~ label,
+    .text-field input:not(:placeholder-shown) ~ label {
+      top: 10px;
+      transform: none;
+      font-size: 0.75rem;
+      color: var(--md-primary);
+    }
+
+    /* Priority Select */
+    .priority-field {
+      flex: 0 0 auto;
+      position: relative;
+    }
+
+    .priority-field select {
+      height: 56px;
+      padding: 0 36px 0 14px;
+      border: none;
+      border-radius: 4px 4px 0 0;
+      border-bottom: 2px solid var(--md-outline);
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.9rem;
+      color: var(--md-on-surface);
+      background: var(--md-surface-variant);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .priority-field select:hover { background: #DDD8E8; }
+    .priority-field select:focus { border-bottom-color: var(--md-primary); }
+
+    .priority-field::after {
+      content: 'expand_more';
+      font-family: 'Material Icons Round';
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--md-on-surface-variant);
+      font-size: 1.25rem;
+    }
+
+    /* Add Button */
+    .add-btn {
+      flex: 0 0 auto;
+      height: 56px;
+      padding: 0 24px;
+      background: var(--md-primary);
+      color: var(--md-on-primary);
+      border: none;
+      border-radius: 16px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: var(--elev-2);
+      transition: box-shadow 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    .add-btn:hover { background: #7965AF; box-shadow: var(--elev-3); }
+    .add-btn:active { box-shadow: var(--elev-1); }
+    .add-btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+    /* ── Todo List ── */
+    #todo-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #todo-list li {
+      background: var(--md-surface);
+      border-radius: 12px;
+      box-shadow: var(--elev-1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 8px 12px 4px;
+      transition: box-shadow 0.2s, opacity 0.2s;
+      border: 2px solid transparent;
+    }
+
+    #todo-list li:hover { box-shadow: var(--elev-2); }
+
+    .drag-handle {
+      color: var(--md-on-surface-variant);
+      cursor: grab;
+      flex-shrink: 0;
+      user-select: none;
+      font-size: 1.4rem;
+      opacity: 0.4;
+      padding: 0 4px;
+      transition: opacity 0.15s;
+    }
+
+    #todo-list li:hover .drag-handle { opacity: 0.7; }
+    .drag-handle:active { cursor: grabbing; }
+
+    #todo-list li input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--md-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .priority-chip {
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .priority-chip:hover { filter: brightness(0.9); }
+
+    .priority-high   { background: #FFDAD6; color: #BA1A1A; }
+    .priority-medium { background: #FFE0B2; color: #BF360C; }
+    .priority-low    { background: #C8E6C9; color: #1B5E20; }
+
+    .todo-text {
+      flex: 1;
+      font-size: 0.975rem;
+      color: var(--md-on-surface);
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    li.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--md-on-surface-variant);
+    }
+
+    li.completed { opacity: 0.6; }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--md-error);
+      flex-shrink: 0;
+      transition: background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .delete-btn:hover { background: var(--md-error-container); }
+
+    li.dragging { opacity: 0.3; box-shadow: var(--elev-3); }
+    li.drag-over-top    { border-top: 2px solid var(--md-primary); }
+    li.drag-over-bottom { border-bottom: 2px solid var(--md-primary); }
+
+    /* Loading spinner */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--md-on-surface-variant);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--md-surface-variant);
+      border-top-color: var(--md-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 56px 16px;
+      color: var(--md-on-surface-variant);
+    }
+
+    .empty-state .material-icons-round {
+      font-size: 3.5rem;
+      opacity: 0.35;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    /* Ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transform: scale(0);
+      animation: ripple-anim 0.55s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .app-bar { height: 56px; }
+      .user-email { display: none; }
+      .input-card { padding: 14px 12px; }
+      .input-row { gap: 6px; }
+      .text-field input { font-size: 0.9rem; }
+      .priority-field select { font-size: 0.8rem; padding: 0 28px 0 8px; }
+      .add-btn { padding: 0 14px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── 인증 화면 ── -->
+  <div id="auth-view">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="material-icons-round">checklist</span>
+        <h1>오늘 할일</h1>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="signin">로그인</button>
+        <button class="auth-tab" data-tab="signup">회원가입</button>
+      </div>
+      <form id="auth-form" novalidate>
+        <div class="field-wrap">
+          <input type="email" id="auth-email" placeholder=" " autocomplete="email" required>
+          <label for="auth-email">이메일</label>
+        </div>
+        <div class="field-wrap">
+          <input type="password" id="auth-password" placeholder=" " autocomplete="current-password" required>
+          <label for="auth-password">비밀번호 (6자 이상)</label>
+        </div>
+        <div id="auth-message" class="auth-message"></div>
+        <button type="submit" class="add-btn" id="auth-submit">
+          <span class="material-icons-round" style="font-size:1.1rem">login</span>
+          로그인
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── 앱 화면 ── -->
+  <div id="app-view" style="display:none">
+    <header class="app-bar">
+      <span class="material-icons-round">checklist</span>
+      <h1>오늘 할일</h1>
+      <div class="spacer"></div>
+      <span id="user-email" class="user-email"></span>
+      <button id="signout-btn" class="icon-btn" title="로그아웃">
+        <span class="material-icons-round">logout</span>
+      </button>
+    </header>
+
+    <main class="main-content">
+      <div class="input-card">
+        <div class="input-row">
+          <div class="text-field">
+            <input type="text" id="todo-input" placeholder=" " autocomplete="off">
+            <label for="todo-input">할 일을 입력하세요</label>
+          </div>
+          <div class="priority-field">
+            <select id="priority-select">
+              <option value="high">🔴 높음</option>
+              <option value="medium" selected>🟡 중간</option>
+              <option value="low">🔵 낮음</option>
+            </select>
+          </div>
+          <button class="add-btn" id="add-btn" style="flex:0 0 auto;width:auto">
+            <span class="material-icons-round" style="font-size:1.1rem">add</span>
+            추가
+          </button>
+        </div>
+      </div>
+
+      <ul id="todo-list"></ul>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ──────────────────────────────────────────
+    // ⚠️  아래 두 값을 Supabase 프로젝트 설정값으로 교체하세요
+    //     Project Settings → API
+    const SUPABASE_URL = 'https://lqparkzzjsxycrkriisw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxcGFya3p6anN4eWNya3JpaXN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1Njk0NTQsImV4cCI6MjA5NDE0NTQ1NH0.cWDP7LDBAgO1D8pfonmhY13XK4TaRw85W-hnjAZwNW0';
+    // ──────────────────────────────────────────
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+    const PRIORITY_MAP = {
+      high:   ['🔴 높음', 'priority-high'],
+      medium: ['🟡 중간', 'priority-medium'],
+      low:    ['🔵 낮음', 'priority-low'],
+    };
+
+    let todos = [];
+    let draggedId = null;
+    let currentMode = 'signin';
+
+    // ── 인증 뷰 / 앱 뷰 전환 ──
+    function showAuth() {
+      document.getElementById('auth-view').style.display = 'flex';
+      document.getElementById('app-view').style.display = 'none';
+      todos = [];
+    }
+
+    function showApp(user) {
+      document.getElementById('auth-view').style.display = 'none';
+      document.getElementById('app-view').style.display = 'block';
+      document.getElementById('user-email').textContent = user.email;
+      loadTodos();
+    }
+
+    // ── 인증 탭 전환 ──
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentMode = tab.dataset.tab;
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const btn = document.getElementById('auth-submit');
+        const icon = btn.querySelector('.material-icons-round');
+        if (currentMode === 'signin') {
+          btn.childNodes[btn.childNodes.length - 1].textContent = ' 로그인';
+          icon.textContent = 'login';
+        } else {
+          btn.childNodes[btn.childNodes.length - 1].textContent = ' 회원가입';
+          icon.textContent = 'person_add';
+        }
+        setAuthMessage('', '');
+      });
+    });
+
+    function setAuthMessage(text, type) {
+      const el = document.getElementById('auth-message');
+      el.textContent = text;
+      el.className = 'auth-message' + (type ? ' ' + type : '');
+    }
+
+    // ── 회원가입 / 로그인 ──
+    document.getElementById('auth-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const btn = document.getElementById('auth-submit');
+
+      if (!email || !password) {
+        setAuthMessage('이메일과 비밀번호를 입력해주세요.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      setAuthMessage('', '');
+
+      if (currentMode === 'signup') {
+        const { error } = await sb.auth.signUp({ email, password });
+        if (error) {
+          setAuthMessage(translateAuthError(error.message), 'error');
+        } else {
+          setAuthMessage('✅ 가입 확인 이메일을 발송했습니다. 메일함을 확인해주세요.', 'info');
+        }
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) {
+          setAuthMessage(translateAuthError(error.message), 'error');
+        }
+      }
+
+      btn.disabled = false;
+    });
+
+    function translateAuthError(msg) {
+      if (msg.includes('Invalid login')) return '이메일 또는 비밀번호가 올바르지 않습니다.';
+      if (msg.includes('Email not confirmed')) return '이메일 인증이 필요합니다. 메일함을 확인해주세요.';
+      if (msg.includes('already registered')) return '이미 가입된 이메일입니다.';
+      if (msg.includes('Password should')) return '비밀번호는 6자 이상이어야 합니다.';
+      if (msg.includes('rate limit')) return '잠시 후 다시 시도해주세요.';
+      return msg;
+    }
+
+    // ── 로그아웃 ──
+    document.getElementById('signout-btn').addEventListener('click', async () => {
+      await sb.auth.signOut();
+    });
+
+    // ── 인증 상태 감지 ──
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (session) showApp(session.user);
+      else showAuth();
+    });
+
+    // ──────────────────────
+    //  Todo CRUD (Supabase)
+    // ──────────────────────
+
+    async function loadTodos() {
+      renderLoading();
+      const { data, error } = await sb
+        .from('todos')
+        .select('*')
+        .order('position', { ascending: true });
+
+      if (error) { console.error(error); return; }
+      todos = data ?? [];
+      renderTodos();
+    }
+
+    function renderLoading() {
+      document.getElementById('todo-list').innerHTML =
+        '<div class="loading"><div class="spinner"></div></div>';
+    }
+
+    function renderTodos() {
+      const list = document.getElementById('todo-list');
+      list.innerHTML = '';
+
+      if (todos.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <span class="material-icons-round">task_alt</span>
+            <p>할 일을 추가해보세요!</p>
+          </div>`;
+        return;
+      }
+
+      todos.forEach(todo => {
+        const li = document.createElement('li');
+        if (todo.completed) li.classList.add('completed');
+        li.dataset.id = todo.id;
+        li.draggable = true;
+
+        li.addEventListener('dragstart', e => {
+          draggedId = todo.id;
+          li.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        li.addEventListener('dragend', () => {
+          li.classList.remove('dragging');
+          clearDragOver();
+        });
+        li.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          clearDragOver();
+          const mid = li.getBoundingClientRect().top + li.getBoundingClientRect().height / 2;
+          li.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+        });
+        li.addEventListener('dragleave', () => {
+          li.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        li.addEventListener('drop', async e => {
+          e.preventDefault();
+          if (draggedId === todo.id) return;
+          const mid = li.getBoundingClientRect().top + li.getBoundingClientRect().height / 2;
+          const insertBefore = e.clientY < mid;
+          const fromIdx = todos.findIndex(t => t.id === draggedId);
+          if (fromIdx === -1) return;
+          const [dragged] = todos.splice(fromIdx, 1);
+          dragged.priority = todo.priority;
+          const toIdx = todos.findIndex(t => t.id === todo.id);
+          todos.splice(insertBefore ? toIdx : toIdx + 1, 0, dragged);
+          renderTodos();
+          await reorderTodos();
+        });
+
+        const handle = document.createElement('span');
+        handle.className = 'drag-handle material-icons-round';
+        handle.textContent = 'drag_indicator';
+        handle.title = '드래그하여 순서 변경';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = todo.completed;
+        checkbox.addEventListener('change', () => toggleTodo(todo.id, !todo.completed));
+
+        const [, cls] = PRIORITY_MAP[todo.priority] ?? PRIORITY_MAP.medium;
+        const chip = document.createElement('select');
+        chip.className = `priority-chip ${cls}`;
+        Object.entries(PRIORITY_MAP).forEach(([val, [text]]) => {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = text;
+          if (val === todo.priority) opt.selected = true;
+          chip.appendChild(opt);
+        });
+        chip.addEventListener('change', () => changePriority(todo.id, chip.value));
+
+        const span = document.createElement('span');
+        span.className = 'todo-text';
+        span.textContent = todo.text;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.title = '삭제';
+        deleteBtn.innerHTML = '<span class="material-icons-round" style="font-size:1.2rem">delete_outline</span>';
+        deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+
+        li.append(handle, checkbox, chip, span, deleteBtn);
+        list.appendChild(li);
+      });
+    }
+
+    function clearDragOver() {
+      document.querySelectorAll('#todo-list li').forEach(el =>
+        el.classList.remove('drag-over-top', 'drag-over-bottom')
+      );
+    }
+
+    async function reorderTodos() {
+      await Promise.all(
+        todos.map((todo, idx) =>
+          sb.from('todos').update({ position: idx, priority: todo.priority }).eq('id', todo.id)
+        )
+      );
+    }
+
+    async function addTodo() {
+      const input = document.getElementById('todo-input');
+      const priority = document.getElementById('priority-select').value;
+      const text = input.value.trim();
+      if (!text) return;
+
+      const { data: { user } } = await sb.auth.getUser();
+      const position = todos.length;
+
+      const { error } = await sb
+        .from('todos')
+        .insert({ text, completed: false, priority, position, user_id: user.id });
+
+      if (error) { console.error(error); return; }
+      input.value = '';
+      input.focus();
+      await loadTodos();
+    }
+
+    async function toggleTodo(id, completed) {
+      await sb.from('todos').update({ completed }).eq('id', id);
+      await loadTodos();
+    }
+
+    async function deleteTodo(id) {
+      await sb.from('todos').delete().eq('id', id);
+      await loadTodos();
+    }
+
+    async function changePriority(id, priority) {
+      await sb.from('todos').update({ priority }).eq('id', id);
+      await loadTodos();
+    }
+
+    // ── 추가 버튼 / Enter ──
+    function addRipple(e) {
+      const btn = e.currentTarget;
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.cssText =
+        `width:${size}px;height:${size}px;` +
+        `left:${e.clientX - rect.left - size / 2}px;` +
+        `top:${e.clientY - rect.top - size / 2}px`;
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+    }
+
+    document.getElementById('add-btn').addEventListener('click', e => { addRipple(e); addTodo(); });
+    document.getElementById('todo-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTodo();
+    });
+  </script>
+</body>
+</html>
