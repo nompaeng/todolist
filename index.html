@@ -642,7 +642,11 @@
       setAuthMessage('', '');
 
       if (currentMode === 'signup') {
-        const { error } = await sb.auth.signUp({ email, password });
+        const { error } = await sb.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: 'https://nompaeng.github.io/todolist/' }
+        });
         if (error) {
           setAuthMessage(translateAuthError(error.message), 'error');
         } else {
